@@ -2,8 +2,10 @@
 Contains a class to help build fixtures programmatically.
 """
 
+from securesystemslib import formats, signer
 from tuf import repository_tool
 
+import json
 import os
 import shutil
 import sys
@@ -12,30 +14,38 @@ import sys
 class FixtureBuilder:
 
     def __init__(self):
+        my_dir = self.dir()
+        my_name = os.path.basename(my_dir)
+
         # The index of the next key pair (in the keys/ directory) to use when initializing
         # a role.
         self._key_index = 0
+        # The public keys, indexed by role name.
+        self.public_keys = {}
+        # The private keys, indexed by role name.
+        self.private_keys = {}
+        # The directory of server-side metadata (and targets).
+        self._server_dir = os.path.join(my_dir, 'server')
+        # The directory of client-side metadata.
+        self._client_dir = os.path.join(my_dir, 'client')
 
         # If a directory of server-side metadata already exists, remove it.
-        server_dir = self._server_dir()
-        if os.path.isdir(server_dir):
-            shutil.rmtree(server_dir)
+        if os.path.isdir(self._server_dir):
+            shutil.rmtree(self._server_dir)
 
         # If a directory of client-side metadata already exists, remove it.
-        client_dir = self._client_dir()
-        if os.path.isdir(client_dir):
-            shutil.rmtree(client_dir)
+        if os.path.isdir(self._client_dir):
+            shutil.rmtree(self._client_dir)
 
-        my_name = os.path.basename(self.dir())
-        self.repository = repository_tool.create_new_repository(server_dir, my_name)
+        self.repository = repository_tool.create_new_repository(self._server_dir, my_name)
         self.repository.status()
-        self._initialize_basic_roles()
 
-    def _initialize_basic_roles(self):
+        # Initialize the basic TUF roles.
         self._initialize_role('root')
         self._initialize_role('targets')
         self._initialize_role('snapshot')
         self._initialize_role('timestamp')
+
         self.repository.status()
 
     def _initialize_role(self, role_name):
@@ -44,6 +54,9 @@ class FixtureBuilder:
         role = getattr(self.repository, role_name)
         role.add_verification_key(public_key)
         role.load_signing_key(private_key)
+
+        self.public_keys[role_name] = public_key
+        self.private_keys[role_name] = private_key
 
         self.repository.mark_dirty([role_name])
 
@@ -77,7 +90,7 @@ class FixtureBuilder:
         if contents is None:
             contents = 'Contents: ' + filename
 
-        path = os.path.join(self._server_dir(), 'targets', filename)
+        path = os.path.join(self._server_dir, 'targets', filename)
         with open(path, 'w') as f:
             f.write(contents)
 
@@ -88,21 +101,44 @@ class FixtureBuilder:
     def publish(self, with_client=False):
         self.repository.writeall(consistent_snapshot=True)
 
-        server_dir = self._server_dir()
-        staging_dir = os.path.join(server_dir, 'metadata.staged')
-        live_dir = os.path.join(server_dir, 'metadata')
-        os.rename(staging_dir, live_dir)
+        staging_dir = os.path.join(self._server_dir, 'metadata.staged')
+        live_dir = os.path.join(self._server_dir, 'metadata')
+        shutil.copytree(staging_dir, live_dir, dirs_exist_ok=True)
 
         if with_client:
-            repository_tool.create_tuf_client_directory(server_dir, self._client_dir())
+            repository_tool.create_tuf_client_directory(self._server_dir, self._client_dir)
 
         return self
 
-    def _server_dir(self):
-        return os.path.join(self.dir(), 'server')
+    def read_signed(self, filename):
+        path = os.path.join(self._server_dir, 'metadata', filename)
 
-    def _client_dir(self):
-        return os.path.join(self.dir(), 'client')
+        with open(path, 'r') as f:
+            data = json.load(f)
+            return data['signed']
+
+    def write_signed(self, filename, data, signing_role):
+        path = os.path.join(self._server_dir, 'metadata', filename)
+
+        with open(path, 'w') as f:
+            data = {
+                'signatures': self._sign(data, signing_role),
+                'signed': data
+            }
+            data = json.dumps(data, indent=1, separators=(',', ': '), sort_keys=True)
+            f.write(data)
+
+    def _sign(self, data, signing_role):
+        # Encode the data to canonical JSON, which is what we will actually sign.
+        data = str.encode(formats.encode_canonical(data))
+        # Get the private (signing) key. Currently, we assume that there's only one.
+        key = self.private_keys[signing_role]
+        # Sign the canonical JSON representation of the data.
+        signature = signer.SSlibSigner(key).sign(data)
+
+        return [
+            signature.to_dict()
+        ]
 
     @staticmethod
     def dir():
