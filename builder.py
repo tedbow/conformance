@@ -57,6 +57,10 @@ class FixtureBuilder:
         except AttributeError:
             return self.repository.targets(name)
 
+    def delegate(self, role_name, paths, parent='targets'):
+        self._role(parent).delegate(role_name, [], paths)
+        self.add_key(role_name)
+
     def add_key(self, role_name):
         (public_key, private_key) = self._import_key(role_name)
 
