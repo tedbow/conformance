@@ -35,10 +35,10 @@ class FixtureBuilder:
         self.repository.status()
 
         # Initialize the basic TUF roles.
-        self._initialize_role('root')
-        self._initialize_role('targets')
-        self._initialize_role('snapshot')
-        self._initialize_role('timestamp')
+        self.add_key('root')
+        self.add_key('targets')
+        self.add_key('snapshot')
+        self.add_key('timestamp')
 
         self.repository.status()
 
@@ -57,7 +57,7 @@ class FixtureBuilder:
         except AttributeError:
             return self.repository.targets(name)
 
-    def _initialize_role(self, role_name):
+    def add_key(self, role_name):
         (public_key, private_key) = self._import_key(role_name)
 
         role = self._role(role_name)
@@ -71,6 +71,11 @@ class FixtureBuilder:
         self._keys[role_name]['private'].append(private_key)
 
         self.repository.mark_dirty([role_name])
+
+    def revoke_key(self, role_name, key_index=0):
+        public_key = self._keys[role_name]['public'][key_index]
+        self._role(role_name).remove_verification_key(public_key)
+        self._keys[role_name]['private'].pop(key_index)
 
     def _import_key(self, role_name):
         keys_dir = os.path.join(os.path.dirname(__file__), 'keys')
