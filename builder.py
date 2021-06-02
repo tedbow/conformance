@@ -48,10 +48,16 @@ class FixtureBuilder:
 
         self.repository.status()
 
+    def _role(self, name):
+        try:
+            return getattr(self.repository, name)
+        except AttributeError:
+            return self.repository.targets(name)
+
     def _initialize_role(self, role_name):
         (public_key, private_key) = self._import_key(role_name)
 
-        role = getattr(self.repository, role_name)
+        role = self._role(role_name)
         role.add_verification_key(public_key)
         role.load_signing_key(private_key)
 
@@ -73,20 +79,13 @@ class FixtureBuilder:
             repository_tool.import_ed25519_privatekey_from_file(private_key, password='pw')
         )
 
-    def add_target(self, filename, signing_role=None):
-        repository = self.repository
-
-        if signing_role is None:
-            repository.targets.add_targets([filename])
-        else:
-            repository.targets(signing_role).add_targets([filename])
-            repository.mark_dirty([signing_role])
-
-        repository.mark_dirty(['snapshot', 'targets', 'timestamp'])
+    def add_target(self, filename, signing_role='targets'):
+        self._role(signing_role).add_targets([filename])
+        self.repository.mark_dirty(['snapshot', 'targets', 'timestamp', signing_role])
 
         return self
 
-    def create_target(self, filename, contents=None, signing_role=None):
+    def create_target(self, filename, contents=None, signing_role='targets'):
         if contents is None:
             contents = 'Contents: ' + filename
 
