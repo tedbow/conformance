@@ -29,13 +29,7 @@ class FixtureBuilder:
         # The directory of client-side metadata.
         self._client_dir = os.path.join(my_dir, 'client')
 
-        # If a directory of server-side metadata already exists, remove it.
-        if os.path.isdir(self._server_dir):
-            shutil.rmtree(self._server_dir)
-
-        # If a directory of client-side metadata already exists, remove it.
-        if os.path.isdir(self._client_dir):
-            shutil.rmtree(self._client_dir)
+        self._clean()
 
         self.repository = repository_tool.create_new_repository(self._server_dir, my_name)
         self.repository.status()
@@ -47,6 +41,15 @@ class FixtureBuilder:
         self._initialize_role('timestamp')
 
         self.repository.status()
+
+    def _clean(self):
+        # If a directory of server-side metadata already exists, remove it.
+        if os.path.isdir(self._server_dir):
+            shutil.rmtree(self._server_dir)
+
+        # If a directory of client-side metadata already exists, remove it.
+        if os.path.isdir(self._client_dir):
+            shutil.rmtree(self._client_dir)
 
     def _role(self, name):
         try:
