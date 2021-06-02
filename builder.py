@@ -20,10 +20,10 @@ class FixtureBuilder:
         # The index of the next key pair (in the keys/ directory) to use when initializing
         # a role.
         self._key_index = 0
-        # The public keys, indexed by role name.
-        self.public_keys = {}
-        # The private keys, indexed by role name.
-        self.private_keys = {}
+        # The keychain, containing all public and private keys. The dictionary
+        # keys are role names, and each item is a dictionary with 'public' and
+        # 'private' members, which are lists of public and private keys.
+        self._keys = {}
         # The directory of server-side metadata (and targets).
         self._server_dir = os.path.join(my_dir, 'server')
         # The directory of client-side metadata.
@@ -64,8 +64,11 @@ class FixtureBuilder:
         role.add_verification_key(public_key)
         role.load_signing_key(private_key)
 
-        self.public_keys[role_name] = public_key
-        self.private_keys[role_name] = private_key
+        if role_name not in self._keys:
+            self._keys[role_name] = {'public': [], 'private': []}
+
+        self._keys[role_name]['public'].append(public_key)
+        self._keys[role_name]['private'].append(private_key)
 
         self.repository.mark_dirty([role_name])
 
@@ -134,7 +137,7 @@ class FixtureBuilder:
         # Encode the data to canonical JSON, which is what we will actually sign.
         data = str.encode(formats.encode_canonical(data))
         # Get the private (signing) key. Currently, we assume that there's only one.
-        key = self.private_keys[signing_role]
+        key = self._keys[signing_role]['private'][0]
         # Sign the canonical JSON representation of the data.
         signature = signer.SSlibSigner(key).sign(data)
 
