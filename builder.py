@@ -63,6 +63,7 @@ class FixtureBuilder:
         """Creates a delegated role."""
         self._role(parent).delegate(role_name, [], paths)
         self.add_key(role_name)
+        return self
 
     def add_key(self, role_name):
         """Loads a key pair from disk and assigns it to a given role."""
@@ -80,11 +81,15 @@ class FixtureBuilder:
 
         self.repository.mark_dirty([role_name])
 
+        return self
+
     def revoke_key(self, role_name, key_index=0):
         """Revokes a key pair from a given role."""
         public_key = self._keys[role_name]['public'].pop(key_index)
         self._role(role_name).remove_verification_key(public_key)
         self._keys[role_name]['private'].pop(key_index)
+
+        return self
 
     def _import_key(self, role_name):
         """Loads a key pair from the keys/ directory."""
@@ -99,6 +104,10 @@ class FixtureBuilder:
             repository_tool.import_ed25519_publickey_from_file(public_key),
             repository_tool.import_ed25519_privatekey_from_file(private_key, password='pw')
         )
+
+    def invalidate(self):
+        self.repository.mark_dirty(['root', 'snapshot', 'timestamp', 'targets'])
+        return self
 
     def add_target(self, filename, signing_role='targets'):
         """Adds an existing target file and signs it."""
