@@ -105,6 +105,7 @@ class FixtureBuilder:
         )
 
     def invalidate(self):
+        """Marks the four main TUF roles as dirty."""
         self.repository.mark_dirty(['root', 'snapshot', 'timestamp', 'targets'])
         return self
 
