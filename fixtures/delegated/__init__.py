@@ -1,6 +1,6 @@
 from builder import FixtureBuilder
 
-FixtureBuilder()\
+FixtureBuilder('delegated')\
     .create_target('testtarget.txt')\
     .publish()\
     .delegate('unclaimed', ['level_1_*.txt'])\

@@ -13,9 +13,8 @@ import sys
 
 class FixtureBuilder:
 
-    def __init__(self):
-        my_dir = self.dir()
-        my_name = os.path.basename(my_dir)
+    def __init__(self, name):
+        self.dir = os.path.join(os.path.dirname(__file__), 'fixtures', name)
 
         # The index of the next key pair (in the keys/ directory) to use when initializing
         # a role.
@@ -25,13 +24,13 @@ class FixtureBuilder:
         # 'private' members, which are lists of public and private keys.
         self._keys = {}
         # The directory of server-side metadata (and targets).
-        self._server_dir = os.path.join(my_dir, 'server')
+        self._server_dir = os.path.join(self.dir, 'server')
         # The directory of client-side metadata.
-        self._client_dir = os.path.join(my_dir, 'client')
+        self._client_dir = os.path.join(self.dir, 'client')
 
         self._clean()
 
-        self.repository = repository_tool.create_new_repository(self._server_dir, my_name)
+        self.repository = repository_tool.create_new_repository(self._server_dir, name)
         self.repository.status()
 
         # Initialize the basic TUF roles.
@@ -176,11 +175,3 @@ class FixtureBuilder:
             signatures.append(signature.to_dict())
 
         return signatures
-
-    @staticmethod
-    def dir():
-        """Returns the path to the fixture directory."""
-        return os.path.join(
-            os.path.dirname(__file__),
-            os.path.dirname(sys.argv[0]),
-        )

@@ -8,10 +8,10 @@ import os
 import shutil
 
 # Create a simple, valid fixture with a single target file.
-fixture = FixtureBuilder().create_target('testtarget.txt').publish()
+fixture = FixtureBuilder('rollback').create_target('testtarget.txt').publish()
 
 # Back up the server-side metadata.
-server_dir = os.path.join(fixture.dir(), 'server')
+server_dir = os.path.join(fixture.dir, 'server')
 backup_dir = server_dir + '_backup'
 shutil.copytree(server_dir, backup_dir, dirs_exist_ok=True)
 
