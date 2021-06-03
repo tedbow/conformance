@@ -43,6 +43,7 @@ class FixtureBuilder:
         self.repository.status()
 
     def _clean(self):
+        """Deletes existing client- and server-side data."""
         # If a directory of server-side metadata already exists, remove it.
         if os.path.isdir(self._server_dir):
             shutil.rmtree(self._server_dir)
@@ -52,16 +53,19 @@ class FixtureBuilder:
             shutil.rmtree(self._client_dir)
 
     def _role(self, name):
+        """Loads a role object for a specific role."""
         try:
             return getattr(self.repository, name)
         except AttributeError:
             return self.repository.targets(name)
 
     def delegate(self, role_name, paths, parent='targets'):
+        """Creates a delegated role."""
         self._role(parent).delegate(role_name, [], paths)
         self.add_key(role_name)
 
     def add_key(self, role_name):
+        """Loads a key pair from disk and assigns it to a given role."""
         (public_key, private_key) = self._import_key(role_name)
 
         role = self._role(role_name)
@@ -77,11 +81,13 @@ class FixtureBuilder:
         self.repository.mark_dirty([role_name])
 
     def revoke_key(self, role_name, key_index=0):
-        public_key = self._keys[role_name]['public'][key_index]
+        """Revokes a key pair from a given role."""
+        public_key = self._keys[role_name]['public'].pop(key_index)
         self._role(role_name).remove_verification_key(public_key)
         self._keys[role_name]['private'].pop(key_index)
 
     def _import_key(self, role_name):
+        """Loads a key pair from the keys/ directory."""
         keys_dir = os.path.join(os.path.dirname(__file__), 'keys')
         private_key = os.path.join(keys_dir, str(self._key_index)) + '_key'
         public_key = '{}.pub'.format(private_key)
@@ -95,12 +101,14 @@ class FixtureBuilder:
         )
 
     def add_target(self, filename, signing_role='targets'):
+        """Adds an existing target file and signs it."""
         self._role(signing_role).add_targets([filename])
         self.repository.mark_dirty(['snapshot', 'targets', 'timestamp', signing_role])
 
         return self
 
     def create_target(self, filename, contents=None, signing_role='targets'):
+        """Creates a signed target file with arbitrary contents."""
         if contents is None:
             contents = 'Contents: ' + filename
 
@@ -113,6 +121,7 @@ class FixtureBuilder:
         return self
 
     def publish(self, with_client=False):
+        """Writes the TUF metadata to disk."""
         self.repository.writeall(consistent_snapshot=True)
 
         staging_dir = os.path.join(self._server_dir, 'metadata.staged')
@@ -125,6 +134,7 @@ class FixtureBuilder:
         return self
 
     def read_signed(self, filename):
+        """Returns the signed portion of an existing metadata file."""
         path = os.path.join(self._server_dir, 'metadata', filename)
 
         with open(path, 'r') as f:
@@ -132,6 +142,7 @@ class FixtureBuilder:
             return data['signed']
 
     def write_signed(self, filename, data, signing_role):
+        """Writes arbitrary metadata, signed with a given role's keys, to a file."""
         path = os.path.join(self._server_dir, 'metadata', filename)
 
         with open(path, 'w') as f:
@@ -143,19 +154,23 @@ class FixtureBuilder:
             f.write(data)
 
     def _sign(self, data, signing_role):
+        """Signs arbitrary data using a given role's keys."""
+        signatures = []
+
         # Encode the data to canonical JSON, which is what we will actually sign.
         data = str.encode(formats.encode_canonical(data))
-        # Get the private (signing) key. Currently, we assume that there's only one.
-        key = self._keys[signing_role]['private'][0]
-        # Sign the canonical JSON representation of the data.
-        signature = signer.SSlibSigner(key).sign(data)
 
-        return [
-            signature.to_dict()
-        ]
+        # Loop through the signing role's private keys and use each one to sign
+        # the canonical JSON representation of the data.
+        for key in self._keys[signing_role]['private']:
+            signature = signer.SSlibSigner(key).sign(data)
+            signatures.append(signature.to_dict())
+
+        return signatures
 
     @staticmethod
     def dir():
+        """Returns the path to the fixture directory."""
         return os.path.join(
             os.path.dirname(__file__),
             os.path.dirname(sys.argv[0]),
