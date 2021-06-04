@@ -142,25 +142,25 @@ class FixtureBuilder:
 
         return self
 
-    def read_signed(self, filename):
-        """Returns the signed portion of an existing metadata file."""
+    def read(self, filename):
+        """Returns the parsed contents of an existing metadata file."""
         path = os.path.join(self._server_dir, 'metadata', filename)
 
         with open(path, 'r') as f:
-            data = json.load(f)
-            return data['signed']
+            return json.load(f)
 
-    def write_signed(self, filename, data, signing_role):
-        """Writes arbitrary metadata, signed with a given role's keys, to a file."""
+    def write(self, filename, data):
         path = os.path.join(self._server_dir, 'metadata', filename)
 
         with open(path, 'w') as f:
-            data = {
-                'signatures': self._sign(data, signing_role),
-                'signed': data
-            }
-            data = json.dumps(data, indent=1, separators=(',', ': '), sort_keys=True)
-            f.write(data)
+            json.dump(data, f, indent=1, separators=(',', ': '), sort_keys=True)
+
+    def write_signed(self, filename, data, signing_role):
+        """Writes arbitrary metadata, signed with a given role's keys, to a file."""
+        self.write(filename, {
+            'signatures': self._sign(data, signing_role),
+            'signed': data
+        })
 
     def _sign(self, data, signing_role):
         """Signs arbitrary data using a given role's keys."""
