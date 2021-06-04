@@ -25,10 +25,10 @@ class FixtureBuilder:
         self._keys = {}
         # The directory of server-side metadata (and targets).
         self._server_dir = os.path.join(self.dir, 'server')
-        # The directory of client-side metadata.
-        self._client_dir = os.path.join(self.dir, 'client')
 
-        self._clean()
+        # If a directory of server-side metadata already exists, remove it.
+        if os.path.isdir(self._server_dir):
+            shutil.rmtree(self._server_dir)
 
         self.repository = repository_tool.create_new_repository(self._server_dir, name)
         self.repository.status()
@@ -40,16 +40,6 @@ class FixtureBuilder:
         self.add_key('timestamp')
 
         self.repository.status()
-
-    def _clean(self):
-        """Deletes existing client- and server-side data."""
-        # If a directory of server-side metadata already exists, remove it.
-        if os.path.isdir(self._server_dir):
-            shutil.rmtree(self._server_dir)
-
-        # If a directory of client-side metadata already exists, remove it.
-        if os.path.isdir(self._client_dir):
-            shutil.rmtree(self._client_dir)
 
     def _role(self, name):
         """Loads a role object for a specific role."""
@@ -138,7 +128,12 @@ class FixtureBuilder:
         shutil.copytree(staging_dir, live_dir, dirs_exist_ok=True)
 
         if with_client:
-            repository_tool.create_tuf_client_directory(self._server_dir, self._client_dir)
+            client_dir = os.path.join(self.dir, 'client')
+            # If a directory of client-side metadata already exists, remove it.
+            if os.path.isdir(client_dir):
+                shutil.rmtree(client_dir)
+
+            repository_tool.create_tuf_client_directory(self._server_dir, client_dir)
 
         return self
 
