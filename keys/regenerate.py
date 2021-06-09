@@ -1,10 +1,13 @@
 # You should never need to run this, but this is the code that generated the
 # fixed keys for fixture creation.
 
-from tuf import repository_tool
+from tuf import repository_tool as rt
+
+
+def write_and_import_keypair(filename):
+    pathpriv = '{}_key'.format(filename)
+    rt.generate_and_write_ed25519_keypair(pathpriv, password='pw')
+
 
 for i in range(20):
-    # The filename of the private key. The public key will have the same name,
-    # suffixed with '.pub'.
-    filename = '{}_key'.format(i)
-    repository_tool.generate_and_write_ed25519_keypair(filename, password='pw')
+    write_and_import_keypair(i)
