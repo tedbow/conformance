@@ -4,14 +4,16 @@ Contains a class to help build fixtures programmatically.
 
 from securesystemslib import formats, signer
 from tuf import repository_tool
+from unittest import mock
 
 import json
 import os
 import shutil
-import sys
 
 
 class FixtureBuilder:
+
+    @mock.patch('time.time', mock.MagicMock(return_value=1577836800))
 
     def __init__(self, name):
         self.dir = os.path.join(os.path.dirname(__file__), 'fixtures', name)
