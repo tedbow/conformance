@@ -9,9 +9,12 @@ import json
 import os
 import shutil
 import sys
+from unittest import mock
 
 
 class FixtureBuilder:
+
+    @mock.patch('time.time', mock.MagicMock(return_value=1577836800))
 
     def __init__(self, name):
         self.dir = os.path.join(os.path.dirname(__file__), 'fixtures', name)
