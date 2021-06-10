@@ -13,7 +13,6 @@ fixture.repository.mark_dirty(['timestamp'])
 fixture.publish()
 
 data = fixture.read('timestamp.json')
-print(data['signatures'])
-signature = data['signatures'][1]
+signature = data['signatures'][0].copy()
 data['signatures'] = [signature, signature]
 fixture.write('timestamp.json', data)
