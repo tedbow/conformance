@@ -40,6 +40,9 @@ class FixtureBuilder:
         self.add_key('targets')
         self.add_key('snapshot')
         self.add_key('timestamp')
+        # @todo Do we really need to write when we add initial roles?
+        #   we are doing this now just to match the previous fixtures from php-tuf library
+        self.repository.writeall(consistent_snapshot=True)
 
         self.repository.status()
 

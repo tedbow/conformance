@@ -1,8 +1,6 @@
 from builder import FixtureBuilder
 
 fixture = FixtureBuilder('threshold_two')\
-    .create_target('testtarget.txt')\
-    .publish()\
     .add_key('timestamp')
 
 fixture._role('timestamp').threshold = 2

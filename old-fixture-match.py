@@ -3,6 +3,7 @@
 import filecmp
 
 fixtures = [
+    #['TUFTestFixtureSimple', 'simple'], # Matching?
     ['TUFTestFixtureThresholdTwo', 'threshold_two']
 ]
 
