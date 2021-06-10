@@ -4,7 +4,9 @@ import filecmp
 
 fixtures = [
     #['TUFTestFixtureSimple', 'simple'], # Matching?
-    ['TUFTestFixtureThresholdTwo', 'threshold_two']
+    #['TUFTestFixtureThresholdTwo', 'threshold_two']
+    # ['TUFTestFixtureAttackRollback', 'rollback']
+    ['TUFTestFixtureThresholdTwoAttack', 'threshold_two_attack']
 ]
 
 class bcolors:
