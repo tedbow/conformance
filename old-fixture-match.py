@@ -6,7 +6,8 @@ fixtures = [
     #['TUFTestFixtureSimple', 'simple'], # Matching?
     #['TUFTestFixtureThresholdTwo', 'threshold_two']
     # ['TUFTestFixtureAttackRollback', 'rollback']
-    ['TUFTestFixtureThresholdTwoAttack', 'threshold_two_attack']
+   # ['TUFTestFixtureThresholdTwoAttack', 'threshold_two_attack'],
+    ['TUFTestFixtureDelegated', 'delegated']
 ]
 
 class bcolors:

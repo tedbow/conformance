@@ -5,3 +5,16 @@ from fixtures import (
     threshold_two,
     threshold_two_attack
 )
+from unittest import mock
+
+
+@mock.patch('time.time', mock.MagicMock(return_value=1577836800))
+def build():
+    simple.build()
+    rollback.build()
+    delegated.build()
+    threshold_two.build()
+    threshold_two_attack.build()
+
+
+build()
